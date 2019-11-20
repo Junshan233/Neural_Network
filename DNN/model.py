@@ -41,8 +41,24 @@ train_x = train_x_flatten / 255.
 test_x = test_x_flatten / 255.
 
 
+def test(pred, lab):
+    a = np.ones_like(pred)
+    a[pred <= 0.5] = 0
+    b = np.zeros_like(pred)
+    b[a == lab] = 1
+    return np.mean(b)
+
+
+def getAccuracy(test_x, test_y, parameters):
+    AL_test, _ = L_forward_propagation(test_x, parameters)
+    accu = test(AL_test, test_y)
+    return accu
+
+
 def L_layers_model(X,
                    Y,
+                   test_x,
+                   test_y,
                    layers_dims,
                    learning_rate=0.0075,
                    num_iterations=1500,
@@ -50,13 +66,16 @@ def L_layers_model(X,
                    method="None"):
     parameters = init_parameters(layers_dims, method)
     costs = []
+    accus = []
     for i in range(num_iterations):
         AL, caches = L_forward_propagation(X, parameters)
         cost = compute_cost(AL, Y)
         grade = L_backward_propagation(AL, Y, caches)
         parameters = update_parameters(parameters, grade, learning_rate)
         if print_cost and i % 100 == 0:
-            print("Cost after iteration %i:%f" % (i, cost))
+            accus.append(getAccuracy(test_x, test_y, parameters))
+            print("Cost after iteration %i:%f, Accuracy: %f" %
+                  (i, cost, accus[-1]))
             costs.append(cost)
     # plot the cost
     # plt.plot(np.squeeze(costs))
@@ -65,25 +84,33 @@ def L_layers_model(X,
     # plt.title("Learning rate =" + str(learning_rate))
     # plt.show()
 
-    return parameters, np.squeeze(costs)
+    return parameters, np.squeeze(costs), accus
 
 
 layers_dims = [12288, 20, 7, 5, 1]
-parameters1, cost1 = L_layers_model(train_x,
-                                    train_y,
-                                    layers_dims,
-                                    num_iterations=2500,
-                                    print_cost=True,
-                                    method="he")
-parameters2, cost2 = L_layers_model(train_x,
-                                    train_y,
-                                    layers_dims,
-                                    num_iterations=2500,
-                                    print_cost=True,
-                                    method="None")
+parameters1, cost1, accus1 = L_layers_model(train_x,
+                                            train_y,
+                                            test_x,
+                                            test_y,
+                                            layers_dims,
+                                            num_iterations=2500,
+                                            print_cost=True,
+                                            method="he")
+# parameters2, cost2,accus2 = L_layers_model(train_x,
+#                                     train_y,
+#                                     test_x,
+#                                     test_y,
+#                                     layers_dims,
+#                                     num_iterations=2500,
+#                                     print_cost=True,
+#                                     method="None")
+plt.subplot(2, 1, 1)
 plt.plot(cost1, label="he")
-plt.plot(cost2, label="None")
+# plt.plot(cost2, label="None")
 plt.ylabel('cost')
-plt.xlabel('iterations (per tens)')
 plt.title("Learning rate = 0.0075")
+plt.subplot(2, 1, 2)
+plt.plot(accus1)
+plt.ylabel("Accuracy")
+plt.xlabel('iterations (per tens)')
 plt.show()
