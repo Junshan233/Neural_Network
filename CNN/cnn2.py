@@ -68,9 +68,8 @@ class Conv2D(object):
         if self.method == 'VALID':
             pad_eta = np.pad(self.eta,
                              ((0, 0), (self.ksize - 1, self.ksize - 1),
-                              (self.ksize - 1, self.ksize - 1), (0, 0)),
-                             'constant',
-                             constant_value=0)
+                              (self.ksize - 1, self.ksize - 1), (0, 0))
+                             )
         if self.method == "SAME":
             pad_eta = np.pad(self.eta,
                              ((0, 0), (self.ksize / 2, self.ksize / 2),
@@ -87,6 +86,7 @@ class Conv2D(object):
         ])
         next_eta = np.dot(col_pad_eta, col_flip_weights)
         next_eta = np.reshape(next_eta, self.input_shape)
+        return next_eta
 
     def backward(self, alpha=0.00001, hparameter=40):
         # hparameter is L2 regulation
@@ -110,12 +110,12 @@ def im2col(image, ksize, stride):
 class MaxPooling(object):
     def __init__(self, shape, ksize=2, stride=2):
         self.input_shape = shape
-        self.ksize = ksize
+        self.ksize = int(ksize)
         self.stride = stride
         self.output_channels = shape[-1]
         self.index = np.zeros(shape)
         self.output_shape = [
-            shape[0], shape[1] / self.stride, shape[2] / self.stride,
+            shape[0], int(shape[1] / self.stride), int(shape[2] / self.stride),
             self.output_channels
         ]
 
@@ -126,18 +126,17 @@ class MaxPooling(object):
             for c in range(self.output_channels):
                 for i in range(0, x.shape[1], self.stride):
                     for j in range(0, x.shape[2], self.stride):
-                        out[b, i / self.stride, j / self.stride, c] = np.max(
+                        out[b, int(i / self.stride), int(j / self.stride), c] = np.max(
                             x[b, i:i + self.ksize, j:j + self.ksize, c])
                         index = np.argmax(x[b, i:i + self.ksize, j:j +
                                             self.ksize, c])
-                        self.index[b, i + index / self.stride, j +
+                        self.index[b, i + int(index / self.stride), j +
                                    index % self.stride, c] = 1
         return out
 
     def gradient(self, eta):
-        return np.repeat(np.repeat(eta, self.stride, axis=1),
-                         self.stride,
-                         axis=2) * self.index
+        eta = np.repeat(eta, self.stride, axis=1)
+        return np.repeat(eta, self.stride, axis=2) * self.index
 
 
 class AvgPooling(object):
