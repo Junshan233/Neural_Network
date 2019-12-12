@@ -43,7 +43,7 @@ def forward(data, target):
 
 
 def train(train_loader, epoch, learning_rate, hparameters):
-    
+    losses = []
     for batch_idx, (data, target) in enumerate(train_loader):
         # 提前终止 总共938个batch
         if batch_idx * len(data) >= 5000:
@@ -63,18 +63,20 @@ def train(train_loader, epoch, learning_rate, hparameters):
         conv2.backward(learning_rate, hparameters)
         conv1.backward(learning_rate, hparameters)
 
-        if (batch_idx + 1) % 1 == 0:
+        if (batch_idx + 1) % 2 == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss))
-
+        losses.append(loss)
+    return losses
 
 def test(test_loader, epoch):
     test_loss = 0
     test_acc = 0
     count = 0
+    num_loop = 0
     for data, target in test_loader:
-        
+        num_loop += 1
         data = data.permute(0, 2, 3, 1).numpy()
         target = target.numpy()
         test_loss += forward(data, target)
@@ -86,11 +88,11 @@ def test(test_loader, epoch):
         if count > 500:
             break
     print("epoch:%5d,test_acc:%.4f avg_loss:%.4f" %
-          (epoch, test_acc / float(count),
-           test_loss / float(count)))
+          (epoch, test_acc / float(count), test_loss / float(num_loop)))
 
 
 if __name__ == "__main__":
-    for epoch in range(10):
-        train(train_loader, epoch, 0.0001, 40)
-        test(test_loader,epoch)
+    losses = []
+    for epoch in range(20):
+        test(test_loader, epoch)
+        losses.extend(train(train_loader, epoch, 0.0001, 40))

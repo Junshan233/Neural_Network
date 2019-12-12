@@ -214,7 +214,7 @@ class Softmax(object):
         for i in range(self.batchsize):
             self.loss += np.log(np.sum(np.exp(
                 prediction[i]))) - prediction[i, lable[i]]
-        return self.loss
+        return self.loss/self.batchsize
 
     def predict(self, prediction):
         exp_prediction = np.zeros(prediction.shape)
