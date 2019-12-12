@@ -27,9 +27,10 @@ class Conv2D(object):
         self.bias = np.random.standard_normal(
             self.output_channels) / weights_scale
         if method == "VALID":
-            self.eta = np.zeros((shape[0], int((shape[1] - ksize) / self.stride) + 1,
-                 int((shape[2] - ksize) / self.stride) + 1,
-                 self.output_channels))
+            self.eta = np.zeros((shape[0], int(
+                (shape[1] - ksize) / self.stride) + 1,
+                                 int((shape[2] - ksize) / self.stride) + 1,
+                                 self.output_channels))
         if method == "SAME":
             self.eta = np.zeros(
                 (shape[0], shape[1] / self.stride + 1,
@@ -68,8 +69,8 @@ class Conv2D(object):
         if self.method == 'VALID':
             pad_eta = np.pad(self.eta,
                              ((0, 0), (self.ksize - 1, self.ksize - 1),
-                              (self.ksize - 1, self.ksize - 1), (0, 0))
-                             )
+                              (self.ksize - 1, self.ksize - 1), (0, 0)),
+                             mode="constant")
         if self.method == "SAME":
             pad_eta = np.pad(self.eta,
                              ((0, 0), (self.ksize / 2, self.ksize / 2),
@@ -115,8 +116,9 @@ class MaxPooling(object):
         self.output_channels = shape[-1]
         self.index = np.zeros(shape)
         self.output_shape = [
-            shape[0], int(shape[1] / self.stride), int(shape[2] / self.stride),
-            self.output_channels
+            shape[0],
+            int(shape[1] / self.stride),
+            int(shape[2] / self.stride), self.output_channels
         ]
 
     def forward(self, x):
@@ -126,8 +128,10 @@ class MaxPooling(object):
             for c in range(self.output_channels):
                 for i in range(0, x.shape[1], self.stride):
                     for j in range(0, x.shape[2], self.stride):
-                        out[b, int(i / self.stride), int(j / self.stride), c] = np.max(
-                            x[b, i:i + self.ksize, j:j + self.ksize, c])
+                        out[b,
+                            int(i / self.stride),
+                            int(j / self.stride), c] = np.max(
+                                x[b, i:i + self.ksize, j:j + self.ksize, c])
                         index = np.argmax(x[b, i:i + self.ksize, j:j +
                                             self.ksize, c])
                         self.index[b, i + int(index / self.stride), j +
@@ -172,7 +176,8 @@ class FullyConnect(object):
         self.input_shape = shape
         self.batchsize = shape[0]
         input_len = shape[1] * shape[2] * shape[3]
-        self.weights = np.random.standard_normal((int(input_len), int(output_num))) / 100
+        self.weights = np.random.standard_normal(
+            (int(input_len), int(output_num))) / 100
         self.bias = np.random.standard_normal(output_num) / 100
         self.output_shape = [self.batchsize, output_num]
         self.w_gradient = np.zeros_like(self.weights)
@@ -214,7 +219,7 @@ class Softmax(object):
         for i in range(self.batchsize):
             self.loss += np.log(np.sum(np.exp(
                 prediction[i]))) - prediction[i, lable[i]]
-        return self.loss/self.batchsize
+        return self.loss / self.batchsize
 
     def predict(self, prediction):
         exp_prediction = np.zeros(prediction.shape)
