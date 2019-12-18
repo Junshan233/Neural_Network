@@ -31,7 +31,7 @@ class RNNLayer(object):
         self.learning_rate = learning_rate
         self.state_list = []  # 保存每一步状态
         self.state_list.append(np.zeros((hidden_dim, 1)))  # 初始状态为0
-        self.ot = [] # 每一步输出
+        self.ot = np.zeros((1,input_length)) # 每一步输出
         self.prediction = np.zeros((1, input_length))  # 每一步的预测输出 0 或 1
         # 初始化模型参数
         # s(t) = sigmoid(U*x(t) + W*s(t-1))
@@ -44,21 +44,31 @@ class RNNLayer(object):
         self.W_grad = np.zeros_like(self.W)
         self.V_grad = np.zeros_like(self.V)
 
-    def forward(self, input_matrix): # 低位在左，高位在右
+        self.loss = 0
+
+    def forward(self, input_matrix):  # 低位在左，高位在右
         # input_array - shape(2,input_length)
         for i in range(self.input_length):
             xt = input_matrix[:, i]
             state = np.dot(self.U, xt) + np.dot(self.W, self.state_list[-1])
             state = self.activator.forward(state)
-            ot = self.activator.forward(np.dot(self.V,state))
-            self.ot.append(ot)
+            ot = self.activator.forward(np.dot(self.V, state))
+            self.ot[1,i] = ot
             self.state_list.append(state)
-            self.prediction[1,i] = 1 if ot > 0.5 else 0
+            self.prediction[1, i] = 1 if ot > 0.5 else 0
 
+    def calc_loss(self, y_label):
+        # 交叉熵损失函数
+        self.loss = np.squeeze(np.sum(np.abs(np.array(self.ot) - y_label)))
+        self.loss = -1 / m * np.sum(y_label * np.log(self.ot) +
+                                    (1 - y_label) * np.log(1 - self.ot))
+        return self.loss
 
-    def backward(self, sensitivity_array, activator):
-        self.calc_delta(sensitivity_array, activator)
-        self.calc_gradient()
+    def backward(self, sensitivity_array, activator, y_label):
+        ot_grade = y_label / self.ot - (1 - y_label) / (1 - self.ot)
+        next_delta = np.zeros((self.didden_dim,1))
+        for i in range(self.input_length):
+            delta = 
 
     def update(self):
         self.W -= self.W_grad * self.learning_rate
